@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navidad: días para comer y cenar</title>
+<style>
+:root{--bg:#fafaf7;--card:#fff;--ink:#222;--muted:#888;--line:#ddd;--lunch:#f6c453;--dinner:#5b7bd5;--best:#2e9e5b}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px}
+header{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:6px}
+h1{font-size:1.4rem;margin:0}
+.sub{color:var(--muted);font-size:.9rem;margin-bottom:10px}
+button.action{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;font:inherit;cursor:pointer}
+#status{color:#b04a00;font-size:.9rem;min-height:1.2em;margin-bottom:8px}
+.summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;font-size:.9rem}
+.pill{padding:6px 10px;border-radius:99px;background:#eee}
+.best{color:var(--best);font-weight:600}
+.months{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
+.month{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;width:320px;max-width:100%}
+.month h2{font-size:1rem;margin:2px 0 8px;text-align:center;text-transform:capitalize}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.dow{font-size:.7rem;color:var(--muted);text-align:center;padding:2px 0}
+.cell{border:1px solid var(--line);border-radius:6px;min-height:64px;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+.cell.empty{border:none;background:transparent}
+.cell.off{opacity:.35}
+.day{font-size:.75rem;font-weight:600;padding:2px 4px}
+.half{flex:1;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:none;background:none;padding:2px;font-family:inherit;color:var(--ink);cursor:pointer;min-height:24px}
+.half.lunch{border-bottom:1px solid var(--line)}
+.half.lunch.on{background:var(--lunch)}
+.half.dinner.on{background:var(--dinner);color:#fff}
+.half:disabled{cursor:default}
+.half.best-day{box-shadow:inset 0 0 0 2px var(--best)}
+.legend{font-size:.85rem;color:var(--muted);margin:14px 0;text-align:center}
+.results{margin:16px auto 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;max-width:600px}
+table{width:100%;border-collapse:collapse;font-size:.88rem}
+th,td{padding:5px 4px;border-bottom:1px solid #eee;text-align:left}
+td.n,th.n{text-align:right}
+</style>
+</head>
+<body>
+<header>
+  <h1>Días libres de Navidad</h1>
+  <div>
+    <span id="who" class="sub"></span>
+    <button class="action" id="login">Entrar con Google</button>
+    <button class="action" id="logout" hidden>Salir</button>
+  </div>
+</header>
+<div class="sub">Vota la comida (parte de arriba de cada día) y la cena (parte de abajo). Solo se puede votar del 22 de diciembre al 7 de enero.</div>
+<div id="status"></div>
+<div class="summary" id="summary"></div>
+<div class="months" id="cal"></div>
+<div class="legend">Arriba: comida · Abajo: cena · El borde verde marca el día con más votos</div>
+<div class="results">
+  <table>
+    <thead><tr><th>Participante</th><th class="n">Comidas</th><th class="n">Cenas</th></tr></thead>
+    <tbody id="people"></tbody>
+  </table>
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCOQU09rJy8_au8mls3b8a82LVreDsNVzU",
+  authDomain: "votaciones-9bc95.firebaseapp.com",
+  projectId: "votaciones-9bc95",
+  storageBucket: "votaciones-9bc95.firebasestorage.app",
+  messagingSenderId: "1092387940683",
+  appId: "1:1092387940683:web:bd7e18f88fef6f0b32a0ce"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+const WIN_START = "2026-12-22", WIN_END = "2027-01-07";
+const MONTHS = [[2026, 11], [2027, 0]];
+const MNAMES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+const DOW = ["L","M","X","J","V","S","D"];
+const pad = n => String(n).padStart(2, "0");
+const keyOf = (y, m, d) => `${y}-${pad(m + 1)}-${pad(d)}`;
+const inWin = k => k >= WIN_START && k <= WIN_END;
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = k => `${+k.slice(8)} de ${MNAMES[+k.slice(5, 7) - 1]}`;
+
+const winKeys = [];
+for (let d = new Date(2026, 11, 22); d <= new Date(2027, 0, 7); d.setDate(d.getDate() + 1)) {
+  winKeys.push(keyOf(d.getFullYear(), d.getMonth(), d.getDate()));
+}
+
+const statusEl = document.getElementById("status");
+const setStatus = t => { statusEl.textContent = t; };
+const calEl = document.getElementById("cal");
+
+let user = null;
+let votes = {};     // uid -> { name, days: { "YYYY-MM-DD": { lunch, dinner } } }
+let unsubscribe = null;
+
+const myDays = () => (user && votes[user.uid] && votes[user.uid].days) || {};
+
+function tally() {
+  const t = {};
+  for (const id in votes) {
+    const days = votes[id].days || {};
+    for (const k in days) {
+      t[k] = t[k] || { lunch: 0, dinner: 0 };
+      if (days[k] && days[k].lunch) t[k].lunch++;
+      if (days[k] && days[k].dinner) t[k].dinner++;
+    }
+  }
+  return t;
+}
+
+function render() {
+  const t = tally(), mine = myDays();
+
+  document.getElementById("who").textContent = user ? `Hola, ${user.displayName || "amigo"}` : "";
+  document.getElementById("login").hidden = !!user;
+  document.getElementById("logout").hidden = !user;
+
+  let maxL = 0, maxD = 0;
+  winKeys.forEach(k => {
+    const c = t[k] || { lunch: 0, dinner: 0 };
+    maxL = Math.max(maxL, c.lunch); maxD = Math.max(maxD, c.dinner);
+  });
+  const bestL = winKeys.filter(k => maxL > 0 && (t[k] || {}).lunch === maxL);
+  const bestD = winKeys.filter(k => maxD > 0 && (t[k] || {}).dinner === maxD);
+  const list = a => a.length ? a.map(fmt).join(", ") : "—";
+
+  document.getElementById("summary").innerHTML =
+    `<span class="pill best">Comida: ${esc(list(bestL))} (${maxL})</span>` +
+    `<span class="pill best">Cena: ${esc(list(bestD))} (${maxD})</span>`;
+
+  let html = "";
+  for (const [y, m] of MONTHS) {
+    const first = (new Date(y, m, 1).getDay() + 6) % 7;
+    const total = new Date(y, m + 1, 0).getDate();
+    let g = DOW.map(x => `<div class="dow">${x}</div>`).join("");
+    for (let i = 0; i < first; i++) g += `<div class="cell empty"></div>`;
+    for (let d = 1; d <= total; d++) {
+      const k = keyOf(y, m, d), on = inWin(k), c = t[k] || { lunch: 0, dinner: 0 };
+      const md = mine[k] || {};
+      const dis = on && user ? "" : "disabled";
+      const bl = bestL.includes(k) ? "best-day" : "", bd = bestD.includes(k) ? "best-day" : "";
+      g += `<div class="cell ${on ? "" : "off"}">
+        <div class="day">${d}</div>
+        <button class="half lunch ${md.lunch ? "on" : ""} ${bl}" data-k="${k}" data-s="lunch" ${dis}>${on ? c.lunch : ""}</button>
+        <button class="half dinner ${md.dinner ? "on" : ""} ${bd}" data-k="${k}" data-s="dinner" ${dis}>${on ? c.dinner : ""}</button>
+      </div>`;
+    }
+    html += `<div class="month"><h2>${MNAMES[m]} ${y}</h2><div class="grid">${g}</div></div>`;
+  }
+  calEl.innerHTML = html;
+
+  const rows = Object.keys(votes).map(id => {
+    const d = votes[id].days || {};
+    let l = 0, n = 0;
+    winKeys.forEach(k => { if (d[k] && d[k].lunch) l++; if (d[k] && d[k].dinner) n++; });
+    return { id, name: votes[id].name || "Alguien", l, n };
+  }).sort((a, b) => a.name.localeCompare(b.name));
+  document.getElementById("people").innerHTML = rows.length
+    ? rows.map(r => `<tr><td>${esc(r.name)}${user && r.id === user.uid ? " (tú)" : ""}</td><td class="n">${r.l}</td><td class="n">${r.n}</td></tr>`).join("")
+    : `<tr><td colspan="3">Todavía no hay votos.</td></tr>`;
+}
+
+document.getElementById("login").onclick = async () => {
+  try { await signInWithPopup(auth, provider); }
+  catch (e) { setStatus("No se pudo iniciar sesión: " + e.code); }
+};
+document.getElementById("logout").onclick = () => signOut(auth);
+
+onAuthStateChanged(auth, u => {
+  user = u;
+  if (u && !unsubscribe) {
+    unsubscribe = onSnapshot(collection(db, "votes"),
+      snap => {
+        votes = {};
+        snap.forEach(d => { votes[d.id] = d.data(); });
+        render();
+      },
+      err => setStatus("Error al leer los votos: " + err.code));
+  }
+  if (!u && unsubscribe) { unsubscribe(); unsubscribe = null; votes = {}; }
+  setStatus(u ? "" : "Entra con Google para votar.");
+  render();
+});
+
+calEl.addEventListener("click", async e => {
+  const b = e.target.closest("button.half");
+  if (!b || b.disabled || !user) return;
+  const k = b.dataset.k, s = b.dataset.s;
+  if (!inWin(k)) return;
+  const days = { ...myDays() };
+  const day = { lunch: false, dinner: false, ...(days[k] || {}) };
+  day[s] = !day[s];
+  days[k] = day;
+  try {
+    await setDoc(doc(db, "votes", user.uid), { name: user.displayName || "Alguien", days }, { merge: true });
+  } catch (err) {
+    setStatus("No se pudo guardar el voto: " + err.code);
+  }
+});
+
+render();
+</script>
+</body>
+</html>
