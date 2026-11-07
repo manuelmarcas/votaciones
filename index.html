@@ -5,58 +5,314 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navidad: días para comer y cenar</title>
 <style>
-:root{--bg:#fafaf7;--card:#fff;--ink:#222;--muted:#888;--line:#ddd;--lunch:#f6c453;--dinner:#5b7bd5;--best:#2e9e5b}
+:root{
+  --bg:#fbf7ef;
+  --ink:#1f2a24;
+  --muted:#6b7570;
+  --line:#e4ddcd;
+  --card:#ffffff;
+  --green:#1e5631;
+  --green-dark:#143d22;
+  --gold:#c99a2e;
+  --red:#b23b3b;
+  --lunch:#f6c453;
+  --lunch-ink:#5a4209;
+  --dinner:#3f5fae;
+  --dinner-ink:#fff;
+  --best:#1e8a4c;
+  --radius:14px;
+}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;background:var(--bg);color:var(--ink);padding:16px}
-header{display:flex;flex-wrap:wrap;gap:8px;justify-content:space-between;align-items:center;margin-bottom:6px}
-h1{font-size:1.4rem;margin:0}
-.sub{color:var(--muted);font-size:.9rem;margin-bottom:10px}
-button.action{padding:8px 12px;border-radius:8px;border:1px solid var(--line);background:#fff;font:inherit;cursor:pointer}
-#status{color:#b04a00;font-size:.9rem;min-height:1.2em;margin-bottom:8px}
-.summary{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;font-size:.9rem}
-.pill{padding:6px 10px;border-radius:99px;background:#eee}
-.best{color:var(--best);font-weight:600}
-.months{display:flex;flex-wrap:wrap;gap:16px;justify-content:center}
-.month{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:10px;width:320px;max-width:100%}
-.month h2{font-size:1rem;margin:2px 0 8px;text-align:center;text-transform:capitalize}
-.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
-.dow{font-size:.7rem;color:var(--muted);text-align:center;padding:2px 0}
-.cell{border:1px solid var(--line);border-radius:6px;min-height:64px;display:flex;flex-direction:column;overflow:hidden;background:#fff}
+html,body{height:100%}
+body{
+  margin:0;
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  background:
+    radial-gradient(circle at 10% 0%, #fdf0e4 0, transparent 45%),
+    radial-gradient(circle at 90% 10%, #eaf3ea 0, transparent 45%),
+    var(--bg);
+  color:var(--ink);
+  min-height:100%;
+}
+
+/* ---------- Login gate ---------- */
+#gate{
+  min-height:100vh;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+.gate-card{
+  background:var(--card);
+  border-radius:20px;
+  padding:40px 32px;
+  max-width:420px;
+  width:100%;
+  text-align:center;
+  box-shadow:0 20px 50px -20px rgba(20,61,34,.35);
+  border:1px solid var(--line);
+}
+.gate-emoji{font-size:2.6rem;margin-bottom:6px}
+.gate-card h1{
+  font-size:1.5rem;
+  margin:0 0 8px;
+  color:var(--green-dark);
+}
+.gate-card p{
+  color:var(--muted);
+  font-size:.95rem;
+  line-height:1.5;
+  margin:0 0 26px;
+}
+.google-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  justify-content:center;
+  width:100%;
+  padding:13px 18px;
+  border-radius:10px;
+  border:1px solid #d7d7d7;
+  background:#fff;
+  font-size:1rem;
+  font-weight:600;
+  color:#3c4043;
+  cursor:pointer;
+  transition:box-shadow .15s, transform .05s;
+}
+.google-btn:hover{box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.google-btn:active{transform:scale(.98)}
+.google-btn svg{width:20px;height:20px;flex:none}
+#gate-status{color:var(--red);font-size:.88rem;margin-top:14px;min-height:1.2em}
+.gate-range{
+  margin-top:22px;
+  font-size:.82rem;
+  color:var(--muted);
+  background:#f4efe2;
+  border-radius:10px;
+  padding:10px 12px;
+}
+
+/* ---------- App ---------- */
+#app{display:none;max-width:1180px;margin:0 auto;padding:22px 18px 60px}
+#app.visible{display:block}
+
+.topbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap:14px;
+  align-items:center;
+  justify-content:space-between;
+  margin-bottom:6px;
+}
+.topbar h1{
+  font-size:1.6rem;
+  margin:0;
+  color:var(--green-dark);
+}
+.who{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-size:.9rem;
+  color:var(--muted);
+}
+.avatar{width:30px;height:30px;border-radius:50%;object-fit:cover;background:var(--line)}
+.logout-btn{
+  border:1px solid var(--line);
+  background:#fff;
+  border-radius:8px;
+  padding:7px 12px;
+  font-size:.85rem;
+  cursor:pointer;
+  color:var(--ink);
+}
+.logout-btn:hover{background:#f5f1e6}
+
+.sub{color:var(--muted);font-size:.95rem;margin:4px 0 18px}
+#app-status{color:var(--red);font-size:.88rem;min-height:1.2em;margin-bottom:10px}
+
+.summary{
+  display:grid;
+  gap:10px;
+  margin-bottom:26px;
+}
+.summary h2{
+  font-size:1.05rem;
+  margin:0 0 4px;
+  color:var(--green-dark);
+}
+.summary-list{
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.summary-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  background:var(--card);
+  border:1px solid var(--line);
+  border-left:4px solid var(--best);
+  border-radius:10px;
+  padding:10px 14px;
+  font-size:.95rem;
+}
+.summary-row .tag{
+  font-weight:700;
+  color:var(--best);
+  min-width:70px;
+}
+.summary-row .votes{
+  margin-left:auto;
+  font-weight:700;
+  color:var(--ink);
+}
+.summary-empty{color:var(--muted);font-size:.9rem;padding:10px 2px}
+
+.months{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:20px;
+}
+@media (min-width:860px){
+  .months{grid-template-columns:1fr 1fr; gap:28px}
+  #app{max-width:1180px}
+}
+
+.month{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;
+  box-shadow:0 10px 30px -22px rgba(20,61,34,.4);
+}
+.month h2{
+  font-size:1.15rem;
+  margin:0 0 14px;
+  text-align:center;
+  text-transform:capitalize;
+  color:var(--green-dark);
+}
+.grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.dow{font-size:.72rem;color:var(--muted);text-align:center;padding:2px 0;font-weight:600}
+.cell{
+  border:1px solid var(--line);
+  border-radius:10px;
+  min-height:76px;
+  display:flex;
+  flex-direction:column;
+  overflow:hidden;
+  background:#fff;
+}
 .cell.empty{border:none;background:transparent}
-.cell.off{opacity:.35}
-.day{font-size:.75rem;font-weight:600;padding:2px 4px}
-.half{flex:1;display:flex;align-items:center;justify-content:center;font-size:.75rem;border:none;background:none;padding:2px;font-family:inherit;color:var(--ink);cursor:pointer;min-height:24px}
+.cell.off{opacity:.4;background:#f6f3ea}
+.day{font-size:.74rem;font-weight:700;padding:4px 6px 2px;color:var(--ink)}
+.half{
+  flex:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  font-size:.74rem;
+  font-weight:600;
+  border:none;
+  background:none;
+  padding:3px 2px;
+  font-family:inherit;
+  color:var(--ink);
+  cursor:pointer;
+  min-height:24px;
+}
+.half .label{opacity:.85}
+.half .count{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  min-width:18px;
+  height:18px;
+  padding:0 4px;
+  border-radius:99px;
+  background:#eee;
+  font-size:.7rem;
+  font-weight:800;
+}
 .half.lunch{border-bottom:1px solid var(--line)}
-.half.lunch.on{background:var(--lunch)}
-.half.dinner.on{background:var(--dinner);color:#fff}
+.half.lunch.on{background:var(--lunch);color:var(--lunch-ink)}
+.half.lunch.on .count{background:rgba(0,0,0,.12)}
+.half.dinner.on{background:var(--dinner);color:var(--dinner-ink)}
+.half.dinner.on .count{background:rgba(255,255,255,.25)}
 .half:disabled{cursor:default}
 .half.best-day{box-shadow:inset 0 0 0 2px var(--best)}
-.legend{font-size:.85rem;color:var(--muted);margin:14px 0;text-align:center}
-.results{margin:16px auto 0;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;max-width:600px}
+
+@media (min-width:860px){
+  .cell{min-height:96px}
+  .half{font-size:.8rem}
+}
+
+.legend{
+  font-size:.85rem;
+  color:var(--muted);
+  margin:18px 0 28px;
+  text-align:center;
+}
+
+.results{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:16px;
+}
+.results h2{font-size:1rem;margin:0 0 10px;color:var(--green-dark)}
 table{width:100%;border-collapse:collapse;font-size:.88rem}
-th,td{padding:5px 4px;border-bottom:1px solid #eee;text-align:left}
+th,td{padding:7px 6px;border-bottom:1px solid #f0ead9;text-align:left}
 td.n,th.n{text-align:right}
 </style>
 </head>
 <body>
-<header>
-  <h1>Días libres de Navidad</h1>
-  <div>
-    <span id="who" class="sub"></span>
-    <button class="action" id="login">Entrar con Google</button>
-    <button class="action" id="logout" hidden>Salir</button>
+
+<div id="gate">
+  <div class="gate-card">
+    <div class="gate-emoji">🎄</div>
+    <h1>Días libres de Navidad</h1>
+    <p>Inicia sesión con tu cuenta de Google para votar los días en que puedes comer y cenar con el grupo.</p>
+    <button class="google-btn" id="login">
+      <svg viewBox="0 0 48 48"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.9 29.3 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6 29.5 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.7-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.6 16 19 13 24 13c3.1 0 5.9 1.1 8 3l5.7-5.7C34.5 6 29.5 4 24 4c-7.7 0-14.4 4.4-17.7 10.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-1.8 13.6-4.8l-6.3-5.3c-2.1 1.4-4.8 2.3-7.3 2.3-5.3 0-9.7-3.1-11.3-7.5l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.3-4.3 5.7l6.3 5.3C40.9 36.5 44 30.9 44 24c0-1.3-.1-2.7-.4-3.5z"/></svg>
+      Entrar con Google
+    </button>
+    <div id="gate-status"></div>
+    <div class="gate-range">Las votaciones estarán abiertas del 22 de diciembre al 7 de enero.</div>
   </div>
-</header>
-<div class="sub">Vota la comida (parte de arriba de cada día) y la cena (parte de abajo). Solo se puede votar del 22 de diciembre al 7 de enero.</div>
-<div id="status"></div>
-<div class="summary" id="summary"></div>
-<div class="months" id="cal"></div>
-<div class="legend">Arriba: comida · Abajo: cena · El borde verde marca el día con más votos</div>
-<div class="results">
-  <table>
-    <thead><tr><th>Participante</th><th class="n">Comidas</th><th class="n">Cenas</th></tr></thead>
-    <tbody id="people"></tbody>
-  </table>
+</div>
+
+<div id="app">
+  <div class="topbar">
+    <h1>🎄 Días libres de Navidad</h1>
+    <div class="who">
+      <img class="avatar" id="avatar" alt="">
+      <span id="who-name"></span>
+      <button class="logout-btn" id="logout">Salir</button>
+    </div>
+  </div>
+  <div class="sub">Vota la comida (arriba de cada día) y la cena (abajo). Solo se puede votar del 22 de diciembre al 7 de enero.</div>
+  <div id="app-status"></div>
+
+  <div class="summary">
+    <h2>🏆 Opciones más votadas</h2>
+    <div class="summary-list" id="summary-list"></div>
+  </div>
+
+  <div class="months" id="cal"></div>
+  <div class="legend">🍽️ Arriba: comida · 🌙 Abajo: cena · El borde verde marca el día con más votos</div>
+
+  <div class="results">
+    <h2>Resumen por participante</h2>
+    <table>
+      <thead><tr><th>Participante</th><th class="n">Comidas</th><th class="n">Cenas</th></tr></thead>
+      <tbody id="people"></tbody>
+    </table>
+  </div>
 </div>
 
 <script type="module">
@@ -93,12 +349,14 @@ for (let d = new Date(2026, 11, 22); d <= new Date(2027, 0, 7); d.setDate(d.getD
   winKeys.push(keyOf(d.getFullYear(), d.getMonth(), d.getDate()));
 }
 
-const statusEl = document.getElementById("status");
-const setStatus = t => { statusEl.textContent = t; };
+const gateEl = document.getElementById("gate");
+const appEl = document.getElementById("app");
+const gateStatus = document.getElementById("gate-status");
+const appStatus = document.getElementById("app-status");
 const calEl = document.getElementById("cal");
 
 let user = null;
-let votes = {};     // uid -> { name, days: { "YYYY-MM-DD": { lunch, dinner } } }
+let votes = {};     // uid -> { name, photo, days: { "YYYY-MM-DD": { lunch, dinner } } }
 let unsubscribe = null;
 
 const myDays = () => (user && votes[user.uid] && votes[user.uid].days) || {};
@@ -119,10 +377,6 @@ function tally() {
 function render() {
   const t = tally(), mine = myDays();
 
-  document.getElementById("who").textContent = user ? `Hola, ${user.displayName || "amigo"}` : "";
-  document.getElementById("login").hidden = !!user;
-  document.getElementById("logout").hidden = !user;
-
   let maxL = 0, maxD = 0;
   winKeys.forEach(k => {
     const c = t[k] || { lunch: 0, dinner: 0 };
@@ -130,11 +384,13 @@ function render() {
   });
   const bestL = winKeys.filter(k => maxL > 0 && (t[k] || {}).lunch === maxL);
   const bestD = winKeys.filter(k => maxD > 0 && (t[k] || {}).dinner === maxD);
-  const list = a => a.length ? a.map(fmt).join(", ") : "—";
 
-  document.getElementById("summary").innerHTML =
-    `<span class="pill best">Comida: ${esc(list(bestL))} (${maxL})</span>` +
-    `<span class="pill best">Cena: ${esc(list(bestD))} (${maxD})</span>`;
+  const rows = [];
+  bestL.forEach(k => rows.push(`<div class="summary-row"><span class="tag">🍽️ Comida</span><span>${esc(fmt(k))}</span><span class="votes">${maxL} voto${maxL === 1 ? "" : "s"}</span></div>`));
+  bestD.forEach(k => rows.push(`<div class="summary-row"><span class="tag">🌙 Cena</span><span>${esc(fmt(k))}</span><span class="votes">${maxD} voto${maxD === 1 ? "" : "s"}</span></div>`));
+  document.getElementById("summary-list").innerHTML = rows.length
+    ? rows.join("")
+    : `<div class="summary-empty">Todavía no hay votos suficientes.</div>`;
 
   let html = "";
   for (const [y, m] of MONTHS) {
@@ -149,46 +405,35 @@ function render() {
       const bl = bestL.includes(k) ? "best-day" : "", bd = bestD.includes(k) ? "best-day" : "";
       g += `<div class="cell ${on ? "" : "off"}">
         <div class="day">${d}</div>
-        <button class="half lunch ${md.lunch ? "on" : ""} ${bl}" data-k="${k}" data-s="lunch" ${dis}>${on ? c.lunch : ""}</button>
-        <button class="half dinner ${md.dinner ? "on" : ""} ${bd}" data-k="${k}" data-s="dinner" ${dis}>${on ? c.dinner : ""}</button>
+        <button class="half lunch ${md.lunch ? "on" : ""} ${bl}" data-k="${k}" data-s="lunch" ${dis}>
+          <span class="label">🍽️ Comida</span>${on ? `<span class="count">${c.lunch}</span>` : ""}
+        </button>
+        <button class="half dinner ${md.dinner ? "on" : ""} ${bd}" data-k="${k}" data-s="dinner" ${dis}>
+          <span class="label">🌙 Cena</span>${on ? `<span class="count">${c.dinner}</span>` : ""}
+        </button>
       </div>`;
     }
     html += `<div class="month"><h2>${MNAMES[m]} ${y}</h2><div class="grid">${g}</div></div>`;
   }
   calEl.innerHTML = html;
 
-  const rows = Object.keys(votes).map(id => {
+  const peopleRows = Object.keys(votes).map(id => {
     const d = votes[id].days || {};
     let l = 0, n = 0;
     winKeys.forEach(k => { if (d[k] && d[k].lunch) l++; if (d[k] && d[k].dinner) n++; });
     return { id, name: votes[id].name || "Alguien", l, n };
   }).sort((a, b) => a.name.localeCompare(b.name));
-  document.getElementById("people").innerHTML = rows.length
-    ? rows.map(r => `<tr><td>${esc(r.name)}${user && r.id === user.uid ? " (tú)" : ""}</td><td class="n">${r.l}</td><td class="n">${r.n}</td></tr>`).join("")
+  document.getElementById("people").innerHTML = peopleRows.length
+    ? peopleRows.map(r => `<tr><td>${esc(r.name)}${user && r.id === user.uid ? " (tú)" : ""}</td><td class="n">${r.l}</td><td class="n">${r.n}</td></tr>`).join("")
     : `<tr><td colspan="3">Todavía no hay votos.</td></tr>`;
 }
 
 document.getElementById("login").onclick = async () => {
+  gateStatus.textContent = "";
   try { await signInWithPopup(auth, provider); }
-  catch (e) { setStatus("No se pudo iniciar sesión: " + e.code); }
+  catch (e) { gateStatus.textContent = "No se pudo iniciar sesión: " + e.code; }
 };
 document.getElementById("logout").onclick = () => signOut(auth);
-
-onAuthStateChanged(auth, u => {
-  user = u;
-  if (u && !unsubscribe) {
-    unsubscribe = onSnapshot(collection(db, "votes"),
-      snap => {
-        votes = {};
-        snap.forEach(d => { votes[d.id] = d.data(); });
-        render();
-      },
-      err => setStatus("Error al leer los votos: " + err.code));
-  }
-  if (!u && unsubscribe) { unsubscribe(); unsubscribe = null; votes = {}; }
-  setStatus(u ? "" : "Entra con Google para votar.");
-  render();
-});
 
 calEl.addEventListener("click", async e => {
   const b = e.target.closest("button.half");
@@ -200,13 +445,46 @@ calEl.addEventListener("click", async e => {
   day[s] = !day[s];
   days[k] = day;
   try {
-    await setDoc(doc(db, "votes", user.uid), { name: user.displayName || "Alguien", days }, { merge: true });
+    await setDoc(doc(db, "votes", user.uid), {
+      name: user.displayName || "Alguien",
+      photo: user.photoURL || "",
+      days
+    }, { merge: true });
   } catch (err) {
-    setStatus("No se pudo guardar el voto: " + err.code);
+    appStatus.textContent = "No se pudo guardar el voto: " + err.code;
   }
 });
 
-render();
+onAuthStateChanged(auth, u => {
+  user = u;
+
+  if (u) {
+    gateEl.style.display = "none";
+    appEl.classList.add("visible");
+    document.getElementById("who-name").textContent = u.displayName || "Alguien";
+    const avatar = document.getElementById("avatar");
+    if (u.photoURL) { avatar.src = u.photoURL; avatar.style.display = ""; }
+    else { avatar.style.display = "none"; }
+
+    if (!unsubscribe) {
+      unsubscribe = onSnapshot(collection(db, "votes"),
+        snap => {
+          votes = {};
+          snap.forEach(d => { votes[d.id] = d.data(); });
+          render();
+        },
+        err => { appStatus.textContent = "Error al leer los votos: " + err.code; });
+    }
+  } else {
+    gateEl.style.display = "";
+    appEl.classList.remove("visible");
+    if (unsubscribe) { unsubscribe(); unsubscribe = null; }
+    votes = {};
+  }
+
+  appStatus.textContent = "";
+  render();
+});
 </script>
 </body>
 </html>
