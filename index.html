@@ -200,7 +200,7 @@ body{
 .cell{
   border:1px solid var(--line);
   border-radius:10px;
-  min-height:76px;
+  min-height:64px;
   display:flex;
   flex-direction:column;
   overflow:hidden;
@@ -254,8 +254,7 @@ body{
 .legend{
   font-size:.85rem;
   color:var(--muted);
-  margin:18px 0 28px;
-  text-align:center;
+  margin:2px 0 16px;
 }
 
 .results{
@@ -296,10 +295,10 @@ td.n,th.n{text-align:right}
     </div>
   </div>
   <div class="sub">Vota la comida (arriba de cada día) y la cena (abajo). Solo se puede votar del 22 de diciembre al 7 de enero.</div>
+  <div class="legend">🍽️ Arriba: comida · 🌙 Abajo: cena · El borde verde marca el día con más votos</div>
   <div id="app-status"></div>
 
   <div class="months" id="cal"></div>
-  <div class="legend">🍽️ Arriba: comida · 🌙 Abajo: cena · El borde verde marca el día con más votos</div>
 
   <div class="summary">
     <h2>🏆 Opciones más votadas</h2>
@@ -406,10 +405,10 @@ function render() {
       g += `<div class="cell ${on ? "" : "off"}">
         <div class="day">${d}</div>
         <button class="half lunch ${md.lunch ? "on" : ""} ${bl}" data-k="${k}" data-s="lunch" ${dis}>
-          <span class="label">🍽️ Comida</span>${on ? `<span class="count">${c.lunch}</span>` : ""}
+          <span class="label">🍽️</span>${on ? `<span class="count">${c.lunch}</span>` : ""}
         </button>
         <button class="half dinner ${md.dinner ? "on" : ""} ${bd}" data-k="${k}" data-s="dinner" ${dis}>
-          <span class="label">🌙 Cena</span>${on ? `<span class="count">${c.dinner}</span>` : ""}
+          <span class="label">🌙</span>${on ? `<span class="count">${c.dinner}</span>` : ""}
         </button>
       </div>`;
     }
