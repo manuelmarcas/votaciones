@@ -136,7 +136,7 @@ body{
 .summary{
   display:grid;
   gap:10px;
-  margin-bottom:26px;
+  margin:26px 0;
 }
 .summary h2{
   font-size:1.05rem;
@@ -298,13 +298,13 @@ td.n,th.n{text-align:right}
   <div class="sub">Vota la comida (arriba de cada día) y la cena (abajo). Solo se puede votar del 22 de diciembre al 7 de enero.</div>
   <div id="app-status"></div>
 
+  <div class="months" id="cal"></div>
+  <div class="legend">🍽️ Arriba: comida · 🌙 Abajo: cena · El borde verde marca el día con más votos</div>
+
   <div class="summary">
     <h2>🏆 Opciones más votadas</h2>
     <div class="summary-list" id="summary-list"></div>
   </div>
-
-  <div class="months" id="cal"></div>
-  <div class="legend">🍽️ Arriba: comida · 🌙 Abajo: cena · El borde verde marca el día con más votos</div>
 
   <div class="results">
     <h2>Resumen por participante</h2>
